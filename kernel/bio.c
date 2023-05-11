@@ -31,11 +31,7 @@ struct {
   struct buf head;
 } bcache;
 
-<<<<<<< HEAD
 void binit(void) {
-=======
-void binit(void) {
->>>>>>> 3587aeeeb69a2f841f6c99288595a997e7a766a7
   struct buf *b;
 
   initlock(&bcache.lock, "bcache");
@@ -43,11 +39,7 @@ void binit(void) {
   // Create linked list of buffers
   bcache.head.prev = &bcache.head;
   bcache.head.next = &bcache.head;
-<<<<<<< HEAD
   for (b = bcache.buf; b < bcache.buf + NBUF; b++) {
-=======
-  for (b = bcache.buf; b < bcache.buf + NBUF; b++) {
->>>>>>> 3587aeeeb69a2f841f6c99288595a997e7a766a7
     b->next = bcache.head.next;
     b->prev = &bcache.head;
     initsleeplock(&b->lock, "buffer");
@@ -59,23 +51,14 @@ void binit(void) {
 // Look through buffer cache for block on device dev.
 // If not found, allocate a buffer.
 // In either case, return locked buffer.
-<<<<<<< HEAD
 static struct buf *bget(uint dev, uint blockno) {
-=======
-static struct buf *bget(uint dev, uint blockno) {
->>>>>>> 3587aeeeb69a2f841f6c99288595a997e7a766a7
   struct buf *b;
 
   acquire(&bcache.lock);
 
   // Is the block already cached?
-<<<<<<< HEAD
   for (b = bcache.head.next; b != &bcache.head; b = b->next) {
     if (b->dev == dev && b->blockno == blockno) {
-=======
-  for (b = bcache.head.next; b != &bcache.head; b = b->next) {
-    if (b->dev == dev && b->blockno == blockno) {
->>>>>>> 3587aeeeb69a2f841f6c99288595a997e7a766a7
       b->refcnt++;
       release(&bcache.lock);
       acquiresleep(&b->lock);
@@ -85,13 +68,8 @@ static struct buf *bget(uint dev, uint blockno) {
 
   // Not cached.
   // Recycle the least recently used (LRU) unused buffer.
-<<<<<<< HEAD
   for (b = bcache.head.prev; b != &bcache.head; b = b->prev) {
     if (b->refcnt == 0) {
-=======
-  for (b = bcache.head.prev; b != &bcache.head; b = b->prev) {
-    if (b->refcnt == 0) {
->>>>>>> 3587aeeeb69a2f841f6c99288595a997e7a766a7
       b->dev = dev;
       b->blockno = blockno;
       b->valid = 0;
@@ -105,19 +83,11 @@ static struct buf *bget(uint dev, uint blockno) {
 }
 
 // Return a locked buf with the contents of the indicated block.
-<<<<<<< HEAD
 struct buf *bread(uint dev, uint blockno) {
   struct buf *b;
 
   b = bget(dev, blockno);
   if (!b->valid) {
-=======
-struct buf *bread(uint dev, uint blockno) {
-  struct buf *b;
-
-  b = bget(dev, blockno);
-  if (!b->valid) {
->>>>>>> 3587aeeeb69a2f841f6c99288595a997e7a766a7
     virtio_disk_rw(b, 0);
     b->valid = 1;
   }
@@ -125,11 +95,7 @@ struct buf *bread(uint dev, uint blockno) {
 }
 
 // Write b's contents to disk.  Must be locked.
-<<<<<<< HEAD
 void bwrite(struct buf *b) {
-=======
-void bwrite(struct buf *b) {
->>>>>>> 3587aeeeb69a2f841f6c99288595a997e7a766a7
   if (!holdingsleep(&b->lock))
     panic("bwrite");
   virtio_disk_rw(b, 1);
@@ -137,11 +103,7 @@ void bwrite(struct buf *b) {
 
 // Release a locked buffer.
 // Move to the head of the most-recently-used list.
-<<<<<<< HEAD
 void brelse(struct buf *b) {
-=======
-void brelse(struct buf *b) {
->>>>>>> 3587aeeeb69a2f841f6c99288595a997e7a766a7
   if (!holdingsleep(&b->lock))
     panic("brelse");
 
@@ -162,21 +124,13 @@ void brelse(struct buf *b) {
   release(&bcache.lock);
 }
 
-<<<<<<< HEAD
 void bpin(struct buf *b) {
-=======
-void bpin(struct buf *b) {
->>>>>>> 3587aeeeb69a2f841f6c99288595a997e7a766a7
   acquire(&bcache.lock);
   b->refcnt++;
   release(&bcache.lock);
 }
 
-<<<<<<< HEAD
 void bunpin(struct buf *b) {
-=======
-void bunpin(struct buf *b) {
->>>>>>> 3587aeeeb69a2f841f6c99288595a997e7a766a7
   acquire(&bcache.lock);
   b->refcnt--;
   release(&bcache.lock);
