@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sysinfo.h"
 
 uint64
 sys_exit(void)
@@ -98,9 +99,27 @@ sys_uptime(void)
 
 uint64
 sys_trace(void) {
-    acquire(&tickslock);
-    if(argint(0, &myproc()->mask) < 0)
-        return -1;
-    release(&tickslock);
-    return 0;
+  // argint检索的是第n个系统调用的参数，因此不包括系统调用本身，传入的参数为0
+  argint(0, &(myproc()->trace_mask));
+  return 0;
+}
+
+extern uint64 freebytes(void);
+extern uint64 procnum(void);
+uint64
+sys_sysinfo(void){
+  // 暂存系统信息
+  struct sysinfo info;
+  info.freemem = freebytes();
+  info.nproc = procnum();
+
+  // 获取虚拟地址
+  uint64 destaddr;
+  argaddr(0,&destaddr);
+
+  // 从kernel拷贝到user
+  if(copyout(myproc()->pagetable, destaddr, (char*)&info, sizeof info) < 0)
+    return -1;
+
+  return 0;
 }

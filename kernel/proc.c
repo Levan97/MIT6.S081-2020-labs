@@ -152,19 +152,6 @@ freeproc(struct proc *p)
   p->state = UNUSED;
 }
 
-int
-proc_count(void) {
-    uint64 num = 0;
-    struct proc *p;
-    for(p = proc; p < &proc[NPROC]; p++) {
-        acquire(&p->lock);
-        if(p->state != UNUSED)
-            num++;
-        release(&p->lock);
-    }
-    return num;
-}
-
 // Create a user page table for a given process,
 // with no user memory, but with trampoline pages.
 pagetable_t
@@ -210,15 +197,15 @@ proc_freepagetable(pagetable_t pagetable, uint64 sz)
 
 // a user program that calls exec("/init")
 // od -t xC initcode
+// 这段二进制代码对应的是initcode.S
 uchar initcode[] = {
-  0x17, 0x05, 0x00, 0x00, 0x13, 0x05, 0x45, 0x02,
-  0x97, 0x05, 0x00, 0x00, 0x93, 0x85, 0x35, 0x02,
-  0x93, 0x08, 0x70, 0x00, 0x73, 0x00, 0x00, 0x00,
-  0x93, 0x08, 0x20, 0x00, 0x73, 0x00, 0x00, 0x00,
-  0xef, 0xf0, 0x9f, 0xff, 0x2f, 0x69, 0x6e, 0x69,
-  0x74, 0x00, 0x00, 0x24, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00
-};
+    0x17, 0x05, 0x00, 0x00, 0x13, 0x05, 0x45, 0x02,
+    0x97, 0x05, 0x00, 0x00, 0x93, 0x85, 0x35, 0x02,
+    0x93, 0x08, 0x70, 0x00, 0x73, 0x00, 0x00, 0x00,
+    0x93, 0x08, 0x20, 0x00, 0x73, 0x00, 0x00, 0x00,
+    0xef, 0xf0, 0x9f, 0xff, 0x2f, 0x69, 0x6e, 0x69,
+    0x74, 0x00, 0x00, 0x24, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00};
 
 // Set up first user process.
 void
@@ -293,9 +280,6 @@ fork(void)
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
 
-  // copy trace mask
-  np->mask = p->mask;
-
   // Cause fork to return 0 in the child.
   np->trapframe->a0 = 0;
 
@@ -306,6 +290,9 @@ fork(void)
   np->cwd = idup(p->cwd);
 
   safestrcpy(np->name, p->name, sizeof(p->name));
+
+  //将trace_mask拷贝到子进程
+  np->trace_mask = p->trace_mask;
 
   pid = np->pid;
 
@@ -708,4 +695,19 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+// 获取进程数
+uint64
+procnum(void) {
+  int np = 0;
+  struct proc *p;
+  for(p = proc; p < &proc[NPROC]; ++p) {
+    // p->lock must be held when using state
+    acquire(&p->lock);
+    if(p->state != UNUSED) 
+      ++np;
+    release(&p->lock);
+  }
+  return np;
 }
